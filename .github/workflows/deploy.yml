@@ -1,0 +1,56 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install dependencies
+        run: |
+          npm install
+          cd server && npm install && cd ..
+          cd client && npm install && cd ..
+      
+      - name: Check code style (optional)
+        run: |
+          npm install --save-dev eslint
+          npx eslint server/ || true
+      
+      - name: Build frontend
+        run: cd client && npm run build
+      
+      - name: List build output
+        run: ls -la client/build/
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Railway (manual for now)
+        run: |
+          echo "To deploy to Railway:"
+          echo "1. Connect GitHub repo at railway.app"
+          echo "2. Set environment variables in Railway dashboard:"
+          echo "   COGNODB_URI, COGNODB_USERNAME, COGNODB_PASSWORD"
+          echo "3. Railway will auto-deploy on git push"
