@@ -1,0 +1,15 @@
+# Railway Deployment Configuration
+# Copy this file to a Railway project for easy deployment
+
+# Backend Build Command
+npm install && npm run seed
+
+# Backend Start Command
+node server/index.js
+
+# Environment Variables (set in Railway dashboard)
+# COGNODB_URI=bolt+s://your-instance-id.databases.cognodb.cloud
+# COGNODB_USERNAME=cognodb
+# COGNODB_PASSWORD=your-password-here
+# NODE_ENV=production
+# PORT=3000
