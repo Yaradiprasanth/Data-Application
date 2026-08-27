@@ -245,10 +245,10 @@ cd client && npm install && cd ..
 ### Step 3: Configure Environment Variables
 
 ```bash
-# Create .env file in root directory
+# Create .env file in the repository root
 cp .env.example .env
 
-# Edit .env with your CognoDB credentials
+# Edit .env with the credentials shown by your CognoDB instance
 cat > .env << EOF
 COGNODB_URI=bolt+s://your-instance-id.databases.cognodb.cloud
 COGNODB_USERNAME=cognodb
@@ -258,7 +258,17 @@ NODE_ENV=development
 EOF
 ```
 
-**⚠️ Security Note**: Never commit `.env` to version control. Use `.env.example` as a template.
+For the provided instance, replace only the placeholders locally with:
+
+```env
+COGNODB_URI=bolt+s://db-cfeee9ea.bravo.databases.cognodb.com
+COGNODB_USERNAME=cognodb
+COGNODB_PASSWORD=<your CognoDB password>
+PORT=5000
+NODE_ENV=development
+```
+
+**⚠️ Security Note**: Never commit `.env` or paste the real password into this README. The password is a database secret; configure it locally or through your hosting provider's environment-variable settings.
 
 ### Step 4: Seed Database
 
