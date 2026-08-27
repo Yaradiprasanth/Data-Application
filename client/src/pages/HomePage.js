@@ -32,7 +32,10 @@ export default function HomePage() {
   };
 
   const filteredMovies = selectedGenre
-    ? movies.filter(m => m.genres && m.genres.includes(selectedGenre))
+    ? movies.filter(m => {
+        const genreName = genres.find(genre => genre.id === selectedGenre)?.name;
+        return genreName && m.genres && m.genres.includes(genreName);
+      })
     : movies;
 
   return (
@@ -59,14 +62,8 @@ export default function HomePage() {
               <div className="tags" style={{ gap: '10px' }}>
                 <button
                   className="tag"
-                  style={{
-                    cursor: 'pointer',
-                    background: !selectedGenre ? '#667eea' : '#e8f0ff',
-                    color: !selectedGenre ? 'white' : '#667eea',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                  }}
+                  style={{ cursor: 'pointer' }}
+                  aria-pressed={!selectedGenre}
                   onClick={() => setSelectedGenre(null)}
                 >
                   All ({movies.length})
@@ -75,14 +72,8 @@ export default function HomePage() {
                   <button
                     key={genre.id}
                     className="tag"
-                    style={{
-                      cursor: 'pointer',
-                      background: selectedGenre === genre.id ? '#667eea' : '#e8f0ff',
-                      color: selectedGenre === genre.id ? 'white' : '#667eea',
-                      border: 'none',
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                    }}
+                    style={{ cursor: 'pointer' }}
+                    aria-pressed={selectedGenre === genre.id}
                     onClick={() => setSelectedGenre(genre.id)}
                   >
                     {genre.name} ({genre.movieCount})

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { initializeDriver, closeDriver } = require('./db');
 const queries = require('./queries');
 
@@ -21,7 +22,7 @@ let dbConnected = false;
     dbConnected = true;
   } catch (error) {
     console.error('Failed to initialize database:', error.message);
-    process.exit(1);
+    console.error('The API will remain available and report a disconnected health status.');
   }
 })();
 
@@ -136,6 +137,18 @@ app.get('/api/genres', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch genres', details: error.message });
   }
 });
+
+// Serve the production React build from the same process as the API.
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

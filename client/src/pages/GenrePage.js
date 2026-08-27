@@ -17,12 +17,13 @@ export default function GenrePage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get(`/genres/${id}/movies`);
-      setMovies(res.data);
-      if (res.data.length > 0 && res.data[0].genres) {
-        const genre = res.data[0].genres.find(g => g.id === id);
-        if (genre) setGenreName(genre.name);
-      }
+      const [moviesRes, genresRes] = await Promise.all([
+        apiClient.get(`/genres/${id}/movies`),
+        apiClient.get('/genres'),
+      ]);
+      setMovies(moviesRes.data);
+      const genre = genresRes.data.find(item => item.id === id);
+      setGenreName(genre?.name || '');
     } catch (err) {
       setError(err.message);
       console.error('Error fetching genre movies:', err);

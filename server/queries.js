@@ -9,12 +9,10 @@ async function getAllMovies() {
     const result = await session.run(`
       MATCH (m:Movie)
       OPTIONAL MATCH (m)-[:BELONGS_TO]->(g:Genre)
+      WITH m, [name IN COLLECT(DISTINCT g.name) WHERE name IS NOT NULL] AS genres
       OPTIONAL MATCH (a:Actor)-[:ACTED_IN]->(m)
-      RETURN m {
-        .*,
-        genres: COLLECT(DISTINCT g.name),
-        actors: COLLECT(DISTINCT a {id: a.id, name: a.name})
-      } as movie
+      WITH m, genres, [actor IN COLLECT(DISTINCT CASE WHEN a IS NULL THEN NULL ELSE {id: a.id, name: a.name} END) WHERE actor IS NOT NULL] AS actors
+      RETURN {id: m.id, title: m.title, releaseYear: m.releaseYear, rating: m.rating, description: m.description, genres: genres, actors: actors} AS movie
       ORDER BY m.rating DESC
     `);
 
@@ -33,12 +31,10 @@ async function getMovieById(movieId) {
     const result = await session.run(`
       MATCH (m:Movie {id: $movieId})
       OPTIONAL MATCH (a:Actor)-[:ACTED_IN]->(m)
+      WITH m, [actor IN COLLECT(DISTINCT CASE WHEN a IS NULL THEN NULL ELSE {id: a.id, name: a.name, birthYear: a.birthYear} END) WHERE actor IS NOT NULL] AS actors
       OPTIONAL MATCH (m)-[:BELONGS_TO]->(g:Genre)
-      RETURN m {
-        .*,
-        actors: COLLECT(DISTINCT a {id: a.id, name: a.name, birthYear: a.birthYear}),
-        genres: COLLECT(DISTINCT g {id: g.id, name: g.name})
-      } as movie
+      WITH m, actors, [genre IN COLLECT(DISTINCT CASE WHEN g IS NULL THEN NULL ELSE {id: g.id, name: g.name} END) WHERE genre IS NOT NULL] AS genres
+      RETURN {id: m.id, title: m.title, releaseYear: m.releaseYear, rating: m.rating, description: m.description, actors: actors, genres: genres} AS movie
     `, { movieId });
 
     const records = result.records;
@@ -56,27 +52,27 @@ async function getRecommendations(movieId, limit = 5) {
   try {
     const result = await session.run(`
       MATCH (m:Movie {id: $movieId})
-      // Find movies through shared actors (2-hop: Movie -> Actor -> Movie)
-      OPTIONAL MATCH (m)-[:BELONGS_TO]->(g:Genre)<-[:BELONGS_TO]-(similar:Movie)
-      OPTIONAL MATCH (a:Actor)-[:ACTED_IN]->(m)-[:ACTED_IN]-(similarActor:Movie)
-      WITH similar, similarActor, m
-      WHERE similar.id <> m.id AND similarActor.id <> m.id
-      WITH COALESCE(similar, similarActor) as recommended
-      WHERE recommended IS NOT NULL
-      
+      MATCH (recommended:Movie)
+      WHERE recommended.id <> m.id
+      OPTIONAL MATCH (m)-[:BELONGS_TO]->(sharedGenre:Genre)<-[:BELONGS_TO]-(recommended)
+      OPTIONAL MATCH (m)<-[:ACTED_IN]-(sharedActor:Actor)-[:ACTED_IN]->(recommended)
+      WITH m, recommended,
+           COUNT(DISTINCT sharedGenre) AS sharedGenreCount,
+           COUNT(DISTINCT sharedActor) AS sharedActorCount
+      WHERE sharedGenreCount > 0 OR sharedActorCount > 0
       OPTIONAL MATCH (recommended)-[:BELONGS_TO]->(rg:Genre)
-      OPTIONAL MATCH (ra:Actor)-[:ACTED_IN]->(recommended)
       
-      RETURN DISTINCT recommended {
-        .*,
-        genres: COLLECT(DISTINCT rg.name),
-        actors: COLLECT(DISTINCT ra {id: ra.id, name: ra.name})
-      } as movie
+      WITH recommended, [name IN COLLECT(DISTINCT rg.name) WHERE name IS NOT NULL] AS genres
+      OPTIONAL MATCH (ra:Actor)-[:ACTED_IN]->(recommended)
+      WITH recommended, genres, [actor IN COLLECT(DISTINCT CASE WHEN ra IS NULL THEN NULL ELSE {id: ra.id, name: ra.name} END) WHERE actor IS NOT NULL] AS actors
+      RETURN {id: recommended.id, title: recommended.title, releaseYear: recommended.releaseYear, rating: recommended.rating, description: recommended.description, genres: genres, actors: actors} AS movie
       ORDER BY recommended.rating DESC
       LIMIT $limit
     `, { movieId, limit });
 
-    return result.records.map(record => record.get('movie'));
+    return result.records
+      .map(record => record.get('movie'))
+      .filter(movie => movie && movie.id !== movieId);
   } finally {
     await session.close();
   }
@@ -91,12 +87,10 @@ async function getMoviesByGenre(genreId, limit = 10) {
     const result = await session.run(`
       MATCH (g:Genre {id: $genreId})<-[:BELONGS_TO]-(m:Movie)
       OPTIONAL MATCH (a:Actor)-[:ACTED_IN]->(m)
+      WITH m, [actor IN COLLECT(DISTINCT CASE WHEN a IS NULL THEN NULL ELSE {id: a.id, name: a.name} END) WHERE actor IS NOT NULL] AS actors
       OPTIONAL MATCH (m)-[:BELONGS_TO]->(genre:Genre)
-      RETURN m {
-        .*,
-        genres: COLLECT(DISTINCT genre.name),
-        actors: COLLECT(DISTINCT a {id: a.id, name: a.name})
-      } as movie
+      WITH m, actors, [name IN COLLECT(DISTINCT genre.name) WHERE name IS NOT NULL] AS genres
+      RETURN {id: m.id, title: m.title, releaseYear: m.releaseYear, rating: m.rating, description: m.description, genres: genres, actors: actors} AS movie
       ORDER BY m.rating DESC
       LIMIT $limit
     `, { genreId, limit });
@@ -119,13 +113,13 @@ async function getActorDetails(actorId) {
       OPTIONAL MATCH (m)-[:BELONGS_TO]->(g:Genre)
       RETURN a {
         .*,
-        movies: COLLECT(DISTINCT m {
+        movies: [movie IN COLLECT(DISTINCT CASE WHEN m IS NULL THEN NULL ELSE {
           id: m.id,
           title: m.title,
           releaseYear: m.releaseYear,
           rating: m.rating,
           genres: []
-        })
+        } END) WHERE movie IS NOT NULL]
       } as actor
     `, { actorId });
 

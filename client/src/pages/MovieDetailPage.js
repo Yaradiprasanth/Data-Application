@@ -95,20 +95,10 @@ export default function MovieDetailPage() {
                   to={`/actor/${actor.id}`}
                   style={{ textDecoration: 'none' }}
                 >
-                  <div
-                    style={{
-                      padding: '15px',
-                      background: '#f9f9f9',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      transition: 'background 0.3s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#f0f0f0')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#f9f9f9')}
-                  >
-                    <strong style={{ color: '#667eea' }}>{actor.name}</strong>
+                  <div className="person-card">
+                    <strong>{actor.name}</strong>
                     {actor.birthYear && (
-                      <div style={{ color: '#999', fontSize: '0.9em', marginTop: '5px' }}>
+                      <div className="person-meta">
                         Born {actor.birthYear}
                       </div>
                     )}

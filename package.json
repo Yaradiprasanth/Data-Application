@@ -7,7 +7,7 @@
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
     "seed": "node server/seed.js",
-    "build": "cd client && npm run build",
+    "build": "npm --prefix client install && npm --prefix client run build",
     "client": "cd client && npm start"
   },
   "keywords": ["graph-database", "cognodb", "neo4j", "recommendation-engine"],
