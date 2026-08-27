@@ -637,4 +637,3 @@ Built as a CognoDB take-home assignment demonstrating:
 4. **Start development**: `npm start` (backend) + `cd client && npm start` (frontend)
 5. **Deploy**: Push to GitHub, deploy to hosting platforms
 6. **Record demo**: Show recommendations, co-actor networks, and UI
-
