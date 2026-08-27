@@ -1,11 +1,11 @@
 # Railway Deployment Configuration
 # Copy this file to a Railway project for easy deployment
 
-# Full-stack build command. Set the CognoDB variables before deployment.
-npm install && npm run seed && npm run build
+[build]
+buildCommand = "npm install && npm run seed && npm run build"
 
-# Backend Start Command
-node server/index.js
+[deploy]
+startCommand = "node server/index.js"
 
 # Environment Variables (set in Railway dashboard)
 # COGNODB_URI=bolt+s://your-instance-id.databases.cognodb.cloud
